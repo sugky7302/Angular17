@@ -1,0 +1,68 @@
+version: '3.8'
+
+name: "v17"
+
+x-params: &params
+  MODE: ${MODE:-prd}
+  TZ: &zone Asia/Taipei
+  TZ_OFFSET: &tz_offset 28800  # 8*60*60
+  POSTGRES_IP: &pg_ip 172.13.0.2
+  POSTGRES_PORT: &pg_port 5432
+  POSTGRES_DB: &pg_db test
+  POSTGRES_USER: &pg_user postgres
+  POSTGRES_PASSWORD: &pg_pwd admin
+
+x-postgres: &pg_dsn
+  POSTGRES_DB: *pg_db
+  POSTGRES_USER: *pg_user
+  POSTGRES_PASSWORD: *pg_pwd
+
+x-web: &web_dsn
+
+services:
+  database:
+    build:
+      context: ./database
+    restart: always
+    init: true  # 掛載 tini，讓程式可以正確關閉
+    networks:
+      net:
+        ipv4_address: *pg_ip
+    ports:
+      - target: 5432
+        published: *pg_port
+        protocol: tcp
+        mode: host
+    environment:
+      <<: *pg_dsn
+      TZ: *zone
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  web:
+    image: node:20.9.0
+    working_dir: /app
+    depends_on:
+      - database
+    init: true  # 掛載 tini，讓程式可以正確關閉
+    restart: on-failure:5
+    command: "tail -f /dev/null"
+    networks:
+      net:
+        ipv4_address: 172.13.0.3
+    ports:
+      - 4200:4200
+    volumes:
+      - ./web:/app
+
+volumes:
+  postgres_data:
+  nginx_log:
+
+networks:
+  net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.13.0.0/16
+          gateway: 172.13.0.1

@@ -1,0 +1,10 @@
+FROM postgres:16.1
+
+# 這個資料夾會在啟動時被執行，postgres 會自動執行裡面的 sql 檔案
+WORKDIR /docker-entrypoint-initdb.d
+
+COPY schema/ ./
+
+# 希望每次執行都可以執行 create.sql，保證資料不會消失但又可以新增資料表
+# 取代原本的 docker-entrypoint.sh
+COPY --chmod=777 init.sh /usr/local/bin/docker-entrypoint.sh

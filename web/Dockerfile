@@ -1,106 +1,127 @@
-# syntax=docker/dockerfile:1.3
+#syntax=docker/dockerfile:1.3
 
 ##########################################
 # 全域變數
-# Alpine 只有 3.15~3.16 才有 Node.js 16
 ##########################################
-ARG ALPINE_VERSION=3.18 \
-    NODE_VERSION=20.9.0 \
-    ANGULAR_VERSION=17.0.1 \
-    NGINX_VERSION=1.25.3 \
+ARG NODE_VERSION=20.9.0 \
+    NGINX_VERSION=1.25.2 \
+    ALPINE_VERSION=3.17.0 \
     PNPM_DIR="/usr/local/lib/node_modules/pnpm"
 
 
-###########
-# 建置套件
-###########
-FROM alpine:${ALPINE_VERSION} AS build-package
-ARG ANGULAR_VERSION \
-    MODE \
-    PNPM_DIR
-
-
-ENV PNPM_HOME=${PNPM_DIR} \
-    PATH="${PNPM_DIR}:$PATH"
-
-WORKDIR /usr/src/app
-
-COPY package.json .
-
-# 安裝 NodeJS 和 NPM
-# gyp 需要 python、make、g++，所以要額外安裝
-RUN --mount=type=cache,id=nodejs,target=/var/cache/apk \
-    set -xe; \
-    apk add --update nodejs npm python3 make g++; \
-    ln -sf python3 /usr/bin/python;
-
-# 安裝 PNPM、Angular CLI、依賴包
-RUN --mount=type=cache,target=/usr/local/cache/.pnpm-store \
-    set -xe; \
-    npm i -g pnpm; \
-    # 設定全域安裝路徑
-    pnpm config set global-bin-dir ${PNPM_HOME}; \
-    # 設定快取路徑
-    pnpm config set store-dir "/usr/local/cache/.pnpm-store"; \
-    pnpm i -g @angular/cli@${ANGULAR_VERSION}; \
-    if [ "${TOML_ENV}" == "dev" ]; then \
-        pnpm install; \
-    else \
-        pnpm install --production; \
-    fi
-
-
-##########
-# 開發環境
-##########
-FROM node:${NODE_VERSION} AS dev
+#######################################################
+# 初始化環境
+# 適用於第一次建立項目
+#######################################################
+FROM node:${NODE_VERSION} AS init
 ARG PNPM_DIR
 ENV PNPM_HOME=${PNPM_DIR} \
     PATH="${PNPM_DIR}:$PATH"
 
 WORKDIR /app
 
-# 複製 PNPM
-COPY --from=build-package /usr/local/lib/node_modules/ /usr/local/lib/node_modules/
-# 複製套件
-COPY --from=build-package /usr/src/app .
-# 加入 pnpm 的 bin 路徑
-RUN echo "alias pnpm='${PNPM_HOME}/bin/pnpm.cjs'" >> /root/.bashrc
-
-CMD ["tail", "-f", "/dev/null"]
-
-
-##########
-# 產品環境
-##########
-FROM dev as prd
-COPY angular.json tsconfig.app.json tsconfig.json ./
-COPY src/ /app/src
-
-RUN --mount=type=cache,target=/usr/local/cache/.pnpm-store \
+# 安裝 PNPM
+RUN --mount=type=cache,target=/usr/local/cache/.pnpm-store,id=pnpm_store,sharing=locked \
     set -xe; \
-    cp /app/src/environments/environment.prd.ts /app/src/environments/environment.ts; \
-    ng build;
-    # if [ -d "/app/dist/scripts" ]; then \
-    #     rm -rf dist/scripts; \
-    # fi; \
-    # make dist/scripts; \
-    # cp node_modules/marked/marked.min.js dist/scripts/; \
-    # cp node_modules/.pnpm/prismjs@1.29.0/node_modules/prismjs/prism.js dist/scripts/; \
-    # cp node_modules/.pnpm/emoji-toolkit@7.0.0/node_modules/emoji-toolkit/lib/js/joypixels.min.js dist/scripts/
+    npm i -g pnpm; \
+    # 設定全域安裝路徑
+    pnpm config set global-bin-dir ${PNPM_HOME}; \
+    # 設定快取路徑，一定要指定為全域，不然 PlayWright 會報錯
+    pnpm config set store-dir "/usr/local/cache/.pnpm-store" --global;
+
 CMD ["tail", "-f", "/dev/null"]
 
+
+#############################################
+# 把環境變數寫入 environment.ts
+#############################################
+FROM alpine:${ALPINE_VERSION} AS envsubst
+# 因為 ARG 在構建階段等同於 ENV，所以 envsubst 可以寫入檔案裡。
+# 這裡是要加載替換字符，這裡宣告的 ARG 變數必須與 docker-compose.yml/service/.../build/args 一致。
+ARG TARGET_FILE=.docker/environment.template \
+    OUTPUT_FILE=environment.ts \
+    MODE \
+    CHATAI_API \
+    CODEAI_API
+
+# 因為要替換的檔案只會在構建的時候用到，容器裡面用不到，
+# 所以我們用 --mount=type=bind 來掛載。
+RUN --mount=type=cache,target=/var/cache/apk,id=apk \
+    --mount=type=bind,source=${TARGET_FILE},target=${TARGET_FILE} \
+    set -xe && \
+    # 安裝 gettext，讓 envsubst 可以使用
+    apk add gettext && \
+    # 替換環境變數
+    envsubst '${MODE}${CHATAI_API}${CODEAI_API}' < ${TARGET_FILE} > ${OUTPUT_FILE}
+
+CMD ["tail", "-f", "/dev/null"]
+
+
+#######################################################
+# 開發環境
+# 原本是用 Alpine 安裝，但是 PlayWright 偵測不到全域的 PNPM，
+# 所以改成直接在 NodeJS 裡面安裝
+#######################################################
+FROM node:${NODE_VERSION} AS dev
+ARG PNPM_DIR \
+    BUILD_ENV
+ENV PNPM_HOME=${PNPM_DIR} \
+    PATH="${PNPM_DIR}:$PATH"
+
+WORKDIR /app
+
+# 安裝 PNPM、Angular CLI
+RUN --mount=type=cache,target=/usr/local/cache/.pnpm-store,id=pnpm_store,sharing=locked \
+    set -xe; \
+    npm i -g pnpm; \
+    # 設定全域安裝路徑
+    pnpm config set global-bin-dir ${PNPM_HOME}; \
+    # 設定快取路徑，一定要指定為全域，不然 PlayWright 會報錯
+    pnpm config set store-dir "/usr/local/cache/.pnpm-store" --global; \
+    if [ "${BUILD_ENV}" = "dev" ]; then \
+        # 安裝 PlayWright 需求套件
+        pnpm dlx playwright install-deps; \
+        # 安裝 PlayWright 瀏覽器套件
+        pnpm dlx playwright install --with-deps chromium firefox webkit; \
+    fi
+
+# 因為依賴包可能會變動，所以從上面拆出來
+RUN --mount=type=cache,target=/usr/local/cache/.pnpm-store,id=pnpm_store,sharing=locked \
+    --mount=type=bind,source=package.json,target=package.json \
+    --mount=type=bind,source=pnpm-lock.yaml,target=pnpm-lock.yaml \
+    set -xe; \
+    # 目前不管是什麼環境都要安裝 devDependencies，因為 build-angular:application 的東西只在 devDependencies
+    pnpm install;
+
+# 怕每次都要複製，所以放在最後面
+# 使用 .dockerignore 排除不需要的檔案
+COPY --chmod=755 . .
+
+CMD ["tail", "-f", "/dev/null"]
+
+##########
+# 打包
+##########
+FROM dev as build
+
+RUN --mount=type=cache,target=/usr/local/cache/.pnpm-store,id=pnpm_store,sharing=locked \
+    set -xe; \
+    # tailwind.config.ts 只是 VSCode 用的，所以不用複製
+    pnpm build;
+
+CMD ["tail", "-f", "/dev/null"]
+
+##########
+# 生產環境
 # 因為進入容器時會遇到 「需要 Alpine Linux ARM64 3.9 或較新的版本」 這個問題
 # 所以我把 Nginx 的版本從 1.15.2-alpine 升級成 1.23.4-alpine
 # Arvin Yang - 2023/05/17
-# FROM nginx:1.23.4-alpine as prd
-# COPY --from=build /app/dist /usr/share/nginx/html
-
-# # 把 Nginx 模版複製到 Nginx 的設定檔目錄
-# COPY docker-required/nginx.template /etc/nginx/conf.d/
-
-# # 把切割 Nginx 的 access.log 的腳本複製到 Logrotate 的設定檔目錄
-# COPY docker-required/logrotate.template /etc/logrotate.d/default.conf
-
-# # 啟動時，把環境變數帶入 Nginx 的設定檔
-# CMD envsubst '${BACKEND_URI}${FAB8F_URI}${WEATHER_8T_URI}' < /etc/nginx/conf.d/nginx.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'
+##########
+FROM nginx:${NGINX_VERSION}-alpine as prd
+COPY --from=build /app/dist /usr/share/nginx/html
+# 把 Nginx 模版複製到 Nginx 的設定檔目錄
+COPY .docker/nginx.template /etc/nginx/conf.d/
+# 把切割 Nginx 的 access.log 的腳本複製到 Logrotate 的設定檔目錄
+COPY .docker/logrotate.template /etc/logrotate.d/default.conf
+CMD envsubst '' < /etc/nginx/conf.d/nginx.template > /etc/nginx/conf.d/default.conf && \
+    exec nginx -g 'daemon off;'

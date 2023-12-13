@@ -1,65 +1,47 @@
+# 使用 .env* 管理不同環境的設定檔。
+# 詳情請參考 https://medium.com/@mehdi_hosseini/how-to-link-multiple-docker-compose-files-7250f10063a9。
+# 所以根據各個環境去設定有變化的部份，不變的部份則放在這個檔案裡面。
+# By Arvin Yang - 2023/12/13
+
 version: '3.8'
 
-name: "v17"
+include:
+  - path: ./.docker/build.${BUILD_ENV}.yml
+    project_directory: .
 
-x-params: &params
-  MODE: ${MODE:-prd}
-  TZ: &zone Asia/Taipei
+x-params:
+  TZ: &tz Asia/Taipei
   TZ_OFFSET: &tz_offset 28800  # 8*60*60
-  POSTGRES_IP: &pg_ip 172.13.0.2
-  POSTGRES_PORT: &pg_port 5432
-  POSTGRES_DB: &pg_db test
-  POSTGRES_USER: &pg_user postgres
-  POSTGRES_PASSWORD: &pg_pwd admin
 
 x-postgres: &pg_dsn
-  POSTGRES_DB: *pg_db
-  POSTGRES_USER: *pg_user
-  POSTGRES_PASSWORD: *pg_pwd
-
-x-web: &web_dsn
+  POSTGRES_DB: &pg_db main
+  # postgres 的使用者不能用 pg_*
+  POSTGRES_USER: &pg_user chat_user
+  POSTGRES_PASSWORD: &pg_pwd 9}!fbW3P>4+j9ZN&Uv^2x4Pb
 
 services:
   database:
+    container_name: db
     build:
       context: ./database
     restart: always
     init: true  # 掛載 tini，讓程式可以正確關閉
     networks:
-      net:
-        ipv4_address: *pg_ip
+      my_chat_net:
+        ipv4_address: 172.13.0.2
     ports:
-      - target: 5432
-        published: *pg_port
-        protocol: tcp
-        mode: host
+      - 5433:5432
     environment:
       <<: *pg_dsn
-      TZ: *zone
+      TZ: *tz
     volumes:
       - postgres_data:/var/lib/postgresql/data
-  web:
-    image: node:20.9.0
-    working_dir: /app
-    depends_on:
-      - database
-    init: true  # 掛載 tini，讓程式可以正確關閉
-    restart: on-failure:5
-    command: "tail -f /dev/null"
-    networks:
-      net:
-        ipv4_address: 172.13.0.3
-    ports:
-      - 4200:4200
-    volumes:
-      - ./web:/app
 
 volumes:
   postgres_data:
-  nginx_log:
 
 networks:
-  net:
+  my_chat_net:
     driver: bridge
     ipam:
       driver: default

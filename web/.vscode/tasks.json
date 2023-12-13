@@ -1,0 +1,49 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            // Runs the end-to-end tests.
+            "label": "test",
+            "type": "shell",
+            "command": "pnpm exec playwright test",
+            "problemMatcher": []
+        },
+        {
+            // Starts the interactive UI mode.
+            "label": "test in ui",
+            "type": "shell",
+            "command": "pnpm exec playwright test --ui",
+            "problemMatcher": []
+        },
+        {
+            // Runs the tests only on Desktop Chrome.
+            "label": "test only chromium",
+            "type": "shell",
+            "command": "pnpm exec playwright test --project=chromium",
+            "problemMatcher": []
+        },
+        {
+            // Runs the tests in a specific file.
+            "label": "test specific file",
+            "type": "shell",
+            "command": "pnpm exec playwright test example",
+            "problemMatcher": []
+        },
+        {
+            // Runs the tests in debug mode.
+            "label": "test debug",
+            "type": "shell",
+            "command": "pnpm exec playwright test --debug",
+            "problemMatcher": []
+        },
+        {
+            // Auto generate tests with Codegen.
+            "label": "test codegen",
+            "type": "shell",
+            "command": "pnpm exec playwright codegen",
+            "problemMatcher": []
+        }
+    ]
+}

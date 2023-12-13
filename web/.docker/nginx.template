@@ -1,0 +1,51 @@
+log_format custom '$remote_addr - $remote_user [$time_local] '
+                           '"$request" $status $body_bytes_sent '
+                           '"$http_referer" "$http_user_agent" "$gzip_ratio"';
+
+# 开启gzip
+gzip on;
+# 启用gzip压缩的最小文件，小于设置值的文件将不会压缩
+gzip_min_length 1k;
+# gzip 压缩级别，1-10，数字越大压缩的越好，也越占用CPU时间，后面会有详细说明
+gzip_comp_level 1;
+# 进行压缩的文件类型。javascript有多种形式。其中的值可以在 mime.types 文件中找到。
+gzip_types text/plain application/javascript application/x-javascript text/css application/xml text/javascript application/x-httpd-php;
+# 是否在http header中添加Vary: Accept-Encoding，建议开启
+gzip_vary on;
+# 禁用IE 6 gzip
+gzip_disable "MSIE [1-6]\.";
+
+server {
+    listen 80;
+
+    # 這裡要指定 log，Nginx 才會寫入
+    # 預設的 access.log 是空的
+    access_log /var/log/nginx/access.log custom;
+    error_log /var/log/nginx/error.log;
+
+    # The dog.ceo domain is very slow that will lead nginx resolver not working.
+    resolver 172.13.0.1 valid=30s ipv6=off;
+
+    location / {
+        root  /usr/share/nginx/html;
+        index index.html;
+        # url 切换时始终返回index.html
+        try_files $uri index.html;
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header x-forwarded-for  $remote_addr;
+        proxy_set_header X-Forwarded-Host $server_name;
+    }
+
+    # 图片样式缓存1年
+    location ~* /app.*\.(js|css|png|jpg)$
+    {
+        access_log off;
+        expires    365d;
+    }
+    # html/xml/json 文件不缓存
+    location ~* /app.*\.(?:manifest|appcache|html?|xml|json)$
+    {
+        expires    -1;
+    }
+}

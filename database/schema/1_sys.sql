@@ -1,3 +1,5 @@
+/* sys.sql 是建立一個權限管理系統 */
+
 /* sys_operation 定義有哪些對資源的操作 */
 -- 資料表
 drop table if exists public.sys_operation;

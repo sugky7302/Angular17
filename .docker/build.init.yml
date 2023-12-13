@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  web:
+    container_name: web
+    build:
+      context: ./web
+      target: init
+    init: true
+    ports:
+      - 3004:3003
+    environment:
+      TZ: Asia/Taipei
+    networks:
+      my_chat_net:
+        ipv4_address: 172.13.0.3
+    volumes:
+      - ./web:/app
+      # 使用 /dev/null 把 Dockerfile 與 .dockerignore 排除掉
+      # 文件的話會變成空白內容
+      # 目錄的話會變成空目錄
+      - /dev/null:/app/Dockerfile
+      - /dev/null:/app/.dockerignore

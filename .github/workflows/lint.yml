@@ -24,7 +24,7 @@ jobs:
       - name: Install PNPM
         uses: pnpm/action-setup@v2.4.0
         with:
-          # package_json_file: web/package.json
+          package_json_file: web/package.json
           run_install: false
 
       - name: Get pnpm store directory

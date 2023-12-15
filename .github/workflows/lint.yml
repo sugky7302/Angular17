@@ -38,7 +38,7 @@ jobs:
           cache-dependency-path: 'web/pnpm-lock.yaml'
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: PNPM Lint
         run: pnpm lint

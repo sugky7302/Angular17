@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-22.04
     defaults:
       run:
-        working-directory: ./web/
+        shell: bash
+        working-directory: ./web
 
     strategy:
       matrix:

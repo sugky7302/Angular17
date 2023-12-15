@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main, master ]
 
+defaults:
+  run:
+    shell: bash
+    working-directory: ./web
+
 jobs:
   linters:
     name: Linters
@@ -31,9 +36,6 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
           cache-dependency-path: 'web/pnpm-lock.yaml'
-
-      - name: go to web
-        run: cd web
 
       - name: Install dependencies
         run: pnpm install

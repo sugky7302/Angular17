@@ -59,6 +59,3 @@ jobs:
 
       - name: PNPM Format
         run: pnpm format
-
-      - name: Lint by Lint-Staged
-        run: pnpm dlx lint-staged --diff="origin/${GITHUB_BASE_REF}...origin/${GITHUB_HEAD_REF}"

@@ -1,8 +1,8 @@
 {
     "*.{ts,js,tsx,jsx}": [
-      "next lint --fix"
+        "next lint --fix"
     ],
     "*.{html,scss,css}": [
-      "prettier --write"
+        "prettier --write"
     ]
 }

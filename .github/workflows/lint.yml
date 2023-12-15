@@ -6,6 +6,7 @@ on:
   pull_request:
     branches: [ main, master ]
 
+# 這個只適用 run: xxx
 defaults:
   run:
     shell: bash

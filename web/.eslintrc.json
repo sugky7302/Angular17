@@ -1,22 +1,30 @@
 {
-  "extends": [
-    "next/core-web-vitals",
-    "next",
-    "eslint:recommended",
-    "plugin:react/recommended",
-    "plugin:@typescript-eslint/recommended",
-    "prettier"
-  ],
-  "rules": {
-    "react/no-unescaped-entities": "off",
-    "@next/next/no-page-custom-font": "off",
-    "react/react-in-jsx-scope": "off",
-    "camelcase": "error",
-    "spaced-comment": "error",
-    "quotes": ["error", "single"],
-    "no-duplicate-imports": "error"
-  },
-  "parser": "@typescript-eslint/parser",
-  "plugins": ["react", "react-hooks", "@typescript-eslint", "prettier"],
-  "root": true
+    "extends": [
+        "next/core-web-vitals",
+        "next",
+        "eslint:recommended",
+        "plugin:react/recommended",
+        "plugin:@typescript-eslint/recommended",
+        "prettier"
+    ],
+    "rules": {
+        "react/no-unescaped-entities": "off",
+        "@next/next/no-page-custom-font": "off",
+        "react/react-in-jsx-scope": "off",
+        "camelcase": "error",
+        "spaced-comment": "error",
+        "quotes": [
+            "error",
+            "single"
+        ],
+        "no-duplicate-imports": "error"
+    },
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+        "react",
+        "react-hooks",
+        "@typescript-eslint",
+        "prettier"
+    ],
+    "root": true
 }

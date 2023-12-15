@@ -1,5 +1,7 @@
 {
-    "plugins": ["rettier-plugin-tailwindcss"],
+    "plugins": [
+        "prettier-plugin-tailwindcss"
+    ],
     "tabWidth": 4,
     "useTabs": false,
     "printWidth": 100,
@@ -8,43 +10,43 @@
     "trailingComma": "es5",
     "semi": true,
     "overrides": [
-      {
-        "files": [
-          "*.json",
-          ".babelrc"
-        ],
-        "options": {
-          "parser": "json-stringify"
+        {
+            "files": [
+                "*.json",
+                ".babelrc"
+            ],
+            "options": {
+                "parser": "json-stringify"
+            }
+        },
+        {
+            "files": [
+                "*.jsonc",
+                "tsconfig*.json"
+            ],
+            "options": {
+                "parser": "json"
+            }
+        },
+        {
+            "files": [
+                "*.js",
+                "*.cjs",
+                "*.mjs",
+                "*.jsx"
+            ],
+            "options": {
+                "parser": "babel"
+            }
+        },
+        {
+            "files": [
+                "*.ts",
+                "*.tsx"
+            ],
+            "options": {
+                "parser": "typescript"
+            }
         }
-      },
-      {
-        "files": [
-          "*.jsonc",
-          "tsconfig*.json"
-        ],
-        "options": {
-          "parser": "json"
-        }
-      },
-      {
-        "files": [
-          "*.js",
-          "*.cjs",
-          "*.mjs",
-          "*.jsx"
-        ],
-        "options": {
-          "parser": "babel"
-        }
-      },
-      {
-        "files": [
-          "*.ts",
-          "*.tsx"
-        ],
-        "options": {
-          "parser": "typescript"
-        }
-      }
     ]
-  }
+}

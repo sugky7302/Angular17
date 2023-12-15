@@ -10,15 +10,14 @@ jobs:
   linters:
     name: Linters
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./web
 
     strategy:
       matrix:
         node-version: [20.9.0]
     steps:
+      - name: go to web
+        run: cd web/
+
       - name: Checkout code
         uses: actions/checkout@v3
         with:

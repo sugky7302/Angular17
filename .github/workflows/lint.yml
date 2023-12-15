@@ -10,6 +10,10 @@ jobs:
   linters:
     name: Linters
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: ./web/
+
     strategy:
       matrix:
         node-version: [20.9.0]
@@ -22,7 +26,6 @@ jobs:
       - name: Install PNPM
         uses: pnpm/action-setup@v2.4.0
         with:
-          package_json_file: web/package.json
           run_install: false
 
       - name: Install Node.js ${{ matrix.node-version }}

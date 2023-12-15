@@ -1,3 +1,19 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": [
+    "next/core-web-vitals",
+    "next",
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "prettier"
+  ],
+  "rules": {
+    "react/no-unescaped-entities": "off",
+    "@next/next/no-page-custom-font": "off",
+    "react/react-in-jsx-scope": "off",
+    "camelcase": "error",
+    "spaced-comment": "error",
+    "quotes": ["error", "single"],
+    "no-duplicate-imports": "error"
+  },
+  "plugins": ["react", "react-hooks", "@typescript-eslint", "prettier"]
 }

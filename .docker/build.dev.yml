@@ -1,8 +1,8 @@
 version: '3.8'
 
 services:
-  web-dev:
-    container_name: web-dev
+  web:
+    container_name: web
     build:
       context: ./web
       target: dev
@@ -16,27 +16,32 @@ services:
         ipv4_address: 172.13.0.3
     volumes:
       - /app/node_modules # 這樣設定就不會掛載 node_modules，本地只會有空資料夾。
+      - /app/.next
+      - /app/.docker
+      - /dev/null:/app/Dockerfile
+      - /dev/null:/app/.dockerignore
+      - /dev/null:/app/.gitignore
       - ./web:/app
 
-  web-prd:
-    container_name: web-prd
-    build:
-      context: ./web
-      target: prd
-    init: true
-    ports:
-      - 3005:80
-    environment:
-      TZ: Asia/Taipei
-    networks:
-      my_chat_net:
-        ipv4_address: 172.13.0.4
-    develop:
-      watch:
-        - action: rebuild
-          path: ./web/package.json
-    volumes:
-      - nginx_log:/var/log/nginx
+  # web-prd:
+  #   container_name: web-prd
+  #   build:
+  #     context: ./web
+  #     target: prd
+  #   init: true
+  #   ports:
+  #     - 3005:80
+  #   environment:
+  #     TZ: Asia/Taipei
+  #   networks:
+  #     my_chat_net:
+  #       ipv4_address: 172.13.0.4
+  #   develop:
+  #     watch:
+  #       - action: rebuild
+  #         path: ./web/package.json
+  #   volumes:
+  #     - nginx_log:/var/log/nginx
 
 volumes:
   nginx_log:

@@ -4,6 +4,8 @@
         "esbenp.prettier-vscode",
         "rvest.vs-code-prettier-eslint",
         "dbaeumer.vscode-eslint",
-        "ms-playwright.playwright"
+        "ms-playwright.playwright",
+        "bradlc.vscode-tailwindcss",
+        "csstools.postcss"
     ]
 }

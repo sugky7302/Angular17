@@ -39,7 +39,7 @@ services:
   #   develop:
   #     watch:
   #       - action: rebuild
-  #         path: ./web/package.json
+  #         path: ./web/app/
   #   volumes:
   #     - nginx_log:/var/log/nginx
 

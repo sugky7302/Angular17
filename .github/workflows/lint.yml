@@ -42,8 +42,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-        with:
-          package_json_file: web/package.json
 
       - name: PNPM Lint
         run: pnpm lint

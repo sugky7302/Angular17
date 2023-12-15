@@ -32,6 +32,9 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: 'web/pnpm-lock.yaml'
 
+      - name: go to web
+        run: cd web
+
       - name: Install dependencies
         run: pnpm install
 

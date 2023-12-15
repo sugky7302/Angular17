@@ -4,6 +4,7 @@
     "next",
     "eslint:recommended",
     "plugin:react/recommended",
+    "plugin:@typescript-eslint/recommended",
     "prettier"
   ],
   "rules": {
@@ -15,5 +16,7 @@
     "quotes": ["error", "single"],
     "no-duplicate-imports": "error"
   },
-  "plugins": ["react", "react-hooks", "@typescript-eslint", "prettier"]
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["react", "react-hooks", "@typescript-eslint", "prettier"],
+  "root": true
 }

@@ -21,7 +21,7 @@ export default defineConfig({
     workers: process.env.CI ? 1 : undefined,
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
     /* open = never: don't open the browser on test failure, it can avoid to block your container. */
-    reporter: [['html', { open: 'never' }]],
+    reporter: process.env.CI ? 'line' : [['html', { open: 'never' }]],
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */

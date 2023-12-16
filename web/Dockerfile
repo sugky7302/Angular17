@@ -84,8 +84,11 @@ RUN --mount=type=cache,target=/usr/local/cache/.pnpm-store,id=pnpm_store,sharing
     --mount=type=bind,source=package.json,target=package.json \
     --mount=type=bind,source=pnpm-lock.yaml,target=pnpm-lock.yaml \
     set -xe; \
-    # 目前不管是什麼環境都要安裝 devDependencies，因為 build-angular:application 的東西只在 devDependencies
-    pnpm install;
+    if [ "${BUILD_ENV}" == "prd" ]; then \
+        pnpm install --prod; \
+    else \
+        pnpm install; \
+    fi
 
 # 怕每次都要複製，所以放在最後面
 # 使用 .dockerignore 排除不需要的檔案

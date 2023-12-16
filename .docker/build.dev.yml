@@ -15,13 +15,9 @@ services:
       my_chat_net:
         ipv4_address: 172.13.0.3
     volumes:
-      - /app/.next
-      - /app/.docker
-      - /dev/null:/app/Dockerfile
-      - /dev/null:/app/.dockerignore
-      - /dev/null:/app/.gitignore
-      # 讓 node_modules 存入本地，加快重建速度
-      - ./web:/app
+      - ./web/app:/app/app
+      - ./web/playwright:/app/playwright
+      - ./web/public:/app/public
 
   test:
     container_name: web-test

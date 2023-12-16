@@ -145,7 +145,7 @@ RUN --mount=type=cache,target=/usr/local/cache/.pnpm-store,id=pnpm_store,sharing
     # 安裝 PlayWright 需求套件
     pnpm exec playwright install-deps; \
     # 安裝 PlayWright 瀏覽器套件
-    pnpm exec playwright install chromium firefox webkit;
+    pnpm exec playwright install --with-deps chromium firefox webkit;
 
 # 監控檔案變動，自動執行指令
 CMD . /app/.docker/watch.sh && tail -f /dev/null

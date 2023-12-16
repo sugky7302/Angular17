@@ -17,31 +17,32 @@ services:
     volumes:
       - ./web/app:/app/app
       - ./web/playwright:/app/playwright
+      - ./web/lib:/app/lib
       - ./web/public:/app/public
 
-  test:
-    container_name: web-test
-    build:
-      context: ./web
-      target: test
-    init: true
-    ports:
-      - 9323:9323
-    environment:
-      TZ: Asia/Taipei
-    networks:
-      my_chat_net:
-        ipv4_address: 172.13.0.4
-    volumes:
-      - ./web/.docker/watch.sh:/app/.docker/watch.sh
-    develop:
-      watch:
-        - action: sync
-          path: ./web/app/
-          target: /app/app/
-        - action: sync
-          path: ./web/playwright/
-          target: /app/playwright/
+  # test:
+  #   container_name: web-test
+  #   build:
+  #     context: ./web
+  #     target: test
+  #   init: true
+  #   ports:
+  #     - 9323:9323
+  #   environment:
+  #     TZ: Asia/Taipei
+  #   networks:
+  #     my_chat_net:
+  #       ipv4_address: 172.13.0.4
+  #   volumes:
+  #     - ./web/.docker/watch.sh:/app/.docker/watch.sh
+  #   develop:
+  #     watch:
+  #       - action: sync
+  #         path: ./web/app/
+  #         target: /app/app/
+  #       - action: sync
+  #         path: ./web/playwright/
+  #         target: /app/playwright/
 
   deploy:
     container_name: web-deploy

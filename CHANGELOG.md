@@ -1,7 +1,7 @@
 # 更新日誌
 
 ## Unreleased - 2023-12-16
-- 導入 TailWindCSS、PostCSS、Flowbite、PlayWright、Prettier、ESLint、Firebase。([#5024def][5024def])
+- 導入 TailWindCSS、PostCSS、Flowbite、PlayWright、Prettier、ESLint、Firebase、Redux。([#5024def][5024def])
 - 導入 GitHub Actions 作為 CI/CD 工具。([#b4b6b8c][b4b6b8c])
 - 建置本地 PlayWright 容器和 GitHub Actions 測試腳本。([#5502e70][5502e70])
 - 使用容器 web-deploy 架設 Nginx 伺服器。([#e034ad1][e034ad1])

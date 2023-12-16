@@ -3,22 +3,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 白天模式 */
 :root {
-    --foreground-rgb: 0, 0, 0;
-    --background-start-rgb: 214, 219, 220;
-    --background-end-rgb: 255, 255, 255;
+    --g-bg-color: #f4f2f3;
+    --g-text-color: black;
+    --g-avatar-bg-color: #c0a9bd;
+    --g-user-content-bg-color: #deb9c395;
 }
 
+/* 黑夜模式 */
 @media (prefers-color-scheme: dark) {
     :root {
-        --foreground-rgb: 255, 255, 255;
-        --background-start-rgb: 0, 0, 0;
-        --background-end-rgb: 0, 0, 0;
+        --g-bg-color: #f4f2f3;
+        --g-avatar-bg-color: #c0a9bd;
+        --g-user-content-bg-color: #deb9c395;
     }
 }
 
 body {
-    color: rgb(var(--foreground-rgb));
-    background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb)))
-        rgb(var(--background-start-rgb));
+    color: var(--g-text-color);
+    background: var(--g-bg-color);
 }

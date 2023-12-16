@@ -28,7 +28,7 @@ monitor() {
     done
 }
 
-pnpm exec playwright show-report --host 0.0.0.0 &
 pnpm test-ct
+pnpm exec playwright show-report --host 0.0.0.0 &
 monitor_recursive /app/app &
 monitor /app/playwright/*.tsx &

@@ -13,10 +13,7 @@
         "react/react-in-jsx-scope": "off",
         "camelcase": "error",
         "spaced-comment": "error",
-        "jsx-quotes": [
-            "warn",
-            "prefer-single"
-        ],
+        "jsx-quotes": "off",
         "no-duplicate-imports": "error"
     },
     "parser": "@typescript-eslint/parser",

@@ -15,17 +15,20 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     /* Retry on CI only */
     retries: process.env.CI ? 2 : 0,
+    /* Whether to suppress stdio and stderr output from the tests. */
+    quiet: !!process.env.CI,
     /* Opt out of parallel tests on CI. */
     workers: process.env.CI ? 1 : undefined,
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-    reporter: "html",
+    /* open = never: don't open the browser on test failure, it can avoid to block your container. */
+    reporter: [['html', { open: 'never' }]],
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
         trace: "on-first-retry",
 
         /* Port to use for Playwright component endpoint. */
-        ctPort: 3100,
+        // ctPort: 3100,
     },
 
     /* Configure projects for major browsers */

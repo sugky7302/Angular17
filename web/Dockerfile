@@ -77,13 +77,7 @@ RUN --mount=type=cache,target=/usr/local/cache/.pnpm-store,id=pnpm_store,sharing
     # 設定全域安裝路徑
     pnpm config set global-bin-dir ${PNPM_HOME}; \
     # 設定快取路徑，一定要指定為全域，不然 PlayWright 會報錯
-    pnpm config set store-dir "/usr/local/cache/.pnpm-store" --global; \
-    if [ "${BUILD_ENV}" = "dev" ]; then \
-        # 安裝 PlayWright 需求套件
-        pnpm dlx playwright install-deps; \
-        # 安裝 PlayWright 瀏覽器套件
-        pnpm dlx playwright install --with-deps chromium firefox webkit; \
-    fi
+    pnpm config set store-dir "/usr/local/cache/.pnpm-store" --global;
 
 # 因為依賴包可能會變動，所以從上面拆出來
 RUN --mount=type=cache,target=/usr/local/cache/.pnpm-store,id=pnpm_store,sharing=locked \
@@ -125,3 +119,28 @@ COPY .docker/nginx.template /etc/nginx/conf.d/
 COPY .docker/logrotate.template /etc/logrotate.d/default.conf
 CMD envsubst '' < /etc/nginx/conf.d/nginx.template > /etc/nginx/conf.d/default.conf && \
     exec nginx -g 'daemon off;'
+
+
+#######################################################
+# 監控測試
+# 使用 inotify 監控。當檔案有變動時，自動執行指令
+#######################################################
+FROM dev as test
+RUN --mount=type=cache,target=/var/cache/apt,id=apt \
+    set -xe; \
+    # 安裝 inotify-tools
+    apt-get update && \
+    apt-get install -y inotify-tools && \
+    # 清除快取
+    rm -rf /var/lib/apt/lists/*;
+
+# 原本是使用 pnpm dlx，但是每次都會下載，所以改成直接安裝。
+# Arvin Yang - 2023/12/16
+RUN --mount=type=cache,target=/usr/local/cache/.pnpm-store,id=pnpm_store,sharing=locked \
+    # 安裝 PlayWright 需求套件
+    pnpm playwright install-deps; \
+    # 安裝 PlayWright 瀏覽器套件
+    pnpm playwright install --with-deps chromium firefox webkit;
+
+# 監控檔案變動，自動執行指令
+CMD . /app/.docker/watch.sh && tail -f /dev/null

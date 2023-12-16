@@ -23,6 +23,28 @@ services:
       - /dev/null:/app/.gitignore
       - ./web:/app
 
+  test:
+    container_name: web-test
+    build:
+      context: ./web
+      target: test
+    init: true
+    ports:
+      - 9323:9323
+    environment:
+      TZ: Asia/Taipei
+    networks:
+      my_chat_net:
+        ipv4_address: 172.13.0.4
+    volumes:
+      - /app/node_modules # 這樣設定就不會掛載 node_modules，本地只會有空資料夾。
+      # - /app/playwright
+      - /app/.next
+      - /dev/null:/app/Dockerfile
+      - /dev/null:/app/.dockerignore
+      - /dev/null:/app/.gitignore
+      - ./web:/app
+
   # web-prd:
   #   container_name: web-prd
   #   build:

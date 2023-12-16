@@ -36,7 +36,8 @@
                 "*.jsx"
             ],
             "options": {
-                "parser": "babel"
+                "parser": "babel",
+                "singleQuote": true
             }
         },
         {
@@ -45,7 +46,17 @@
                 "*.tsx"
             ],
             "options": {
-                "parser": "typescript"
+                "parser": "babel-ts",
+                "singleQuote": true
+            }
+        },
+        {
+            "files": [
+                "*.html"
+            ],
+            "options": {
+                "parser": "html",
+                "singleQuote": true
             }
         }
     ]

@@ -13,9 +13,9 @@
         "react/react-in-jsx-scope": "off",
         "camelcase": "error",
         "spaced-comment": "error",
-        "quotes": [
-            "error",
-            "single"
+        "jsx-quotes": [
+            "warn",
+            "prefer-single"
         ],
         "no-duplicate-imports": "error"
     },

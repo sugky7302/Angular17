@@ -1,3 +1,4 @@
+/* 這裡會自動幫我匯入 TailWind CSS，所以我不用額外構建。 */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -101,6 +101,7 @@ FROM dev as build
 RUN --mount=type=cache,target=/usr/local/cache/.pnpm-store,id=pnpm_store,sharing=locked \
     set -xe; \
     # tailwind.config.ts 只是 VSCode 用的，所以不用複製
+    # app/global.css 會自動幫我匯入 TailWind CSS，所以我不用額外構建。
     pnpm build;
 
 CMD ["tail", "-f", "/dev/null"]
@@ -112,7 +113,7 @@ CMD ["tail", "-f", "/dev/null"]
 # Arvin Yang - 2023/05/17
 ##########
 FROM nginx:${NGINX_VERSION}-alpine as prd
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/out /usr/share/nginx/html
 # 把 Nginx 模版複製到 Nginx 的設定檔目錄
 COPY .docker/nginx.template /etc/nginx/conf.d/
 # 把切割 Nginx 的 access.log 的腳本複製到 Logrotate 的設定檔目錄
@@ -139,9 +140,9 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt \
 # Arvin Yang - 2023/12/16
 RUN --mount=type=cache,target=/usr/local/cache/.pnpm-store,id=pnpm_store,sharing=locked \
     # 安裝 PlayWright 需求套件
-    pnpm playwright install-deps; \
+    pnpm exec playwright install-deps; \
     # 安裝 PlayWright 瀏覽器套件
-    pnpm playwright install --with-deps chromium firefox webkit;
+    pnpm exec playwright install chromium firefox webkit;
 
 # 監控檔案變動，自動執行指令
 CMD . /app/.docker/watch.sh && tail -f /dev/null

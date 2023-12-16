@@ -1,8 +1,6 @@
 # 我的 ChatGPT
 設計一個簡單的介面串流自定義的 ChatGPT 模型。主要是學習 AI 的訓練方法、模型的設計、以及如何將模型部署到網路上。另外一個目標是學習 React 怎麼寫。
 
-目前還無法架在 Nginx，會抓不到網頁。
-
 ## 網頁
 使用 [Next.js] + [TailWindCSS] + [PostCSS] + [Flowbite] + [PlayWright] + [Prettier] + [ESLint] + [Firebase]。原本要用 [Husky]，但是我用 [GitHub Actions] 取代。
 

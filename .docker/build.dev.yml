@@ -15,12 +15,12 @@ services:
       my_chat_net:
         ipv4_address: 172.13.0.3
     volumes:
-      - /app/node_modules # 這樣設定就不會掛載 node_modules，本地只會有空資料夾。
       - /app/.next
       - /app/.docker
       - /dev/null:/app/Dockerfile
       - /dev/null:/app/.dockerignore
       - /dev/null:/app/.gitignore
+      # 讓 node_modules 存入本地，加快重建速度
       - ./web:/app
 
   test:
@@ -51,7 +51,7 @@ services:
     container_name: web-deploy
     build:
       context: ./web
-      target: build
+      target: prd
     init: true
     ports:
       - 3005:80

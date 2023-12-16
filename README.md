@@ -3,8 +3,6 @@
 
 目前還無法架在 Nginx，會抓不到網頁。
 
-導入 [GitHub Actions] 作為 CI/CD 工具。
-
 ## 網頁
 使用 [Next.js] + [TailWindCSS] + [PostCSS] + [Flowbite] + [PlayWright] + [Prettier] + [ESLint] + [Firebase]。原本要用 [Husky]，但是我用 [GitHub Actions] 取代。
 

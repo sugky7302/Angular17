@@ -125,7 +125,8 @@ CMD envsubst '' < /etc/nginx/conf.d/nginx.template > /etc/nginx/conf.d/default.c
 # 監控測試
 # 使用 inotify 監控。當檔案有變動時，自動執行指令
 #######################################################
-FROM dev as test
+FROM dev AS test
+
 RUN --mount=type=cache,target=/var/cache/apt,id=apt \
     set -xe; \
     # 安裝 inotify-tools

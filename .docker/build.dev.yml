@@ -37,33 +37,35 @@ services:
       my_chat_net:
         ipv4_address: 172.13.0.4
     volumes:
-      - /app/node_modules # 這樣設定就不會掛載 node_modules，本地只會有空資料夾。
-      # - /app/playwright
-      - /app/.next
-      - /dev/null:/app/Dockerfile
-      - /dev/null:/app/.dockerignore
-      - /dev/null:/app/.gitignore
-      - ./web:/app
+      - ./web/.docker/watch.sh:/app/.docker/watch.sh
+    develop:
+      watch:
+        - action: sync
+          path: ./web/app/
+          target: /app/app/
+        - action: sync
+          path: ./web/playwright/
+          target: /app/playwright/
 
-  # web-prd:
-  #   container_name: web-prd
-  #   build:
-  #     context: ./web
-  #     target: prd
-  #   init: true
-  #   ports:
-  #     - 3005:80
-  #   environment:
-  #     TZ: Asia/Taipei
-  #   networks:
-  #     my_chat_net:
-  #       ipv4_address: 172.13.0.4
-  #   develop:
-  #     watch:
-  #       - action: rebuild
-  #         path: ./web/package.json
-  #   volumes:
-  #     - nginx_log:/var/log/nginx
+  deploy:
+    container_name: web-deploy
+    build:
+      context: ./web
+      target: build
+    init: true
+    ports:
+      - 3005:80
+    environment:
+      TZ: Asia/Taipei
+    networks:
+      my_chat_net:
+        ipv4_address: 172.13.0.5
+    develop:
+      watch:
+        - action: rebuild
+          path: ./web/package.json
+    volumes:
+      - nginx_log:/var/log/nginx
 
 volumes:
   nginx_log:

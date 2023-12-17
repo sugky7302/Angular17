@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Test from './test';
 
 export default function App() {
     return (
@@ -9,6 +10,7 @@ export default function App() {
                 height={500}
                 alt="Katherine Johnson"
             />
+            <Test />
         </main>
     );
 }

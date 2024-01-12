@@ -6,6 +6,7 @@
         "dbaeumer.vscode-eslint",
         "ms-playwright.playwright",
         "bradlc.vscode-tailwindcss",
-        "csstools.postcss"
+        "csstools.postcss",
+        "dsznajder.es7-react-js-snippets"
     ]
 }

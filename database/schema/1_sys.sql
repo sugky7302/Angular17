@@ -1,9 +1,37 @@
-/* sys.sql 是建立一個權限管理系統 */
-
-/* sys_operation 定義有哪些對資源的操作 */
--- 資料表
+--##############
+-- 清空舊有資料表
+-- 由於部分資料表有使用外部鍵，因此在這裡定義。
+--##############
+-- 操作被合併到 sys_permission，這邊只是清除舊表。
+drop table if exists public.sys_permission_operation;
+drop table if exists public.sys_role_group;
+drop table if exists public.sys_role_relation;
+drop table if exists public.sys_role_in_group;
+-- 以上表格不再使用
+drop table if exists public.sys_usergroup_role_log;
+drop table if exists public.sys_role_permission;
+drop table if exists public.sys_user_usergroup;
+drop table if exists public.sys_usergroup_role;
+drop table if exists public.sys_user_role;
+drop table if exists public.sys_user_permission;
+drop table if exists public.sys_usergroup_permission;
+drop table if exists public.sys_permission;
+drop table if exists public.sys_resource_explorer;
+drop table if exists public.sys_resource;
 drop table if exists public.sys_operation;
-create table public.sys_operation (
+drop table if exists public.sys_role;
+drop table if exists public.sys_user;
+drop table if exists public.sys_usergroup;
+drop trigger if exists sys_assign_role_to_usergroup on public.sys_usergroup_role;
+
+
+
+
+--##############
+-- 資料表定義
+--##############
+/* sys_operation 定義有哪些對資源的操作 */
+create table if not exists public.sys_operation (
 	name varchar(20) not null,
 	description varchar(100) not null,
 	operation varchar(20) primary key
@@ -13,132 +41,135 @@ comment on column public.sys_operation.name is '操作說明';
 comment on column public.sys_operation.description is '操作說明';
 comment on column public.sys_operation.operation is '操作標籤。因為是欄位主鍵，須有唯一性';
 
--- 資料
+-- 把 C,R,U,D 拆開來是因為網頁端需要比較細緻的控制，例如只能新增不能刪除。
+-- subscribe 從 read 獨立出來是因為搜尋比較方便，特別是要找出哪些屬於訂閱類型的權限，都用 read 還要切資源名稱。
 insert into public.sys_operation (name, description, operation) values
-('新增', '權限擁有者可以新增數據給資源', 'add'),
-('讀取', '權限擁有者可以檢視資源及其數據', 'view'),
-('編輯', '權限擁有者可編輯資源及其數據', 'edit'),
-('刪除', '權限擁有者可刪除資源或其數據', 'delete');
+('讀取', '權限擁有者可以檢視資源及其數據', 'read'),
+('新增', '權限擁有者可以新增數據給資源', 'create'),
+('編輯', '權限擁有者可編輯資源及其數據', 'update'),
+('刪除', '權限擁有者可刪除資源或其數據', 'delete'),
+('訂閱', '權限擁有者可訂閱資源或其數據。當內容更新時，會通知使用者。', 'subscribe'),
+('賦予', '權限擁有者可賦予其他人擁有此資源的權限', 'grant')
+ON CONFLICT (operation) DO NOTHING;
 
-/* sys_permission 定義能對資源進行操作的權限 */
--- 資料表
-drop table if exists public.sys_permission;
-create table public.sys_permission (
+
+/* sys_resource 定義有哪些資源，主要設置相簿。
+   id 請使用 資源類型-資源名稱-{UTF8-SHA256 -> substr(12)}(資源類型-資源名稱) */
+create table if not exists public.sys_resource (
+    id varchar(100) primary key not null,
+    name varchar(100) not null,
+    owner varchar(30) not null,
+    type integer default 1,
+    status smallint default 1 CHECK(status > -1 and status < 2),
+    created_at timestamp default now(),
+    updated_at timestamp default now()
+);
+comment on table public.sys_resource is '定義有哪些資源，主要用在使用者新建相簿。';
+comment on column public.sys_resource.id is '資源編號(主鍵)，請使用 資源類型-資源名稱-{UTF8-SHA256 -> substr(12)}(資源類型-資源名稱)。';
+comment on column public.sys_resource.name is '資源名稱';
+comment on column public.sys_resource.type is '資源類型。1=公開相簿，2=受保護的相簿';
+comment on column public.sys_resource.owner is '擁有者。可能是部門、個人或者系統建立的（system）。';
+comment on column public.sys_resource.status is '資源狀態。0=禁用,1=啟用';
+comment on column public.sys_resource.created_at is '創建時間';
+comment on column public.sys_resource.updated_at is '最後更新時間，可以當作刪除的標準。';
+
+
+/* sys_resource_explorer 是記錄資源擁有哪些實體檔案（照片）或者子資源。
+   這個主要目的是讓系統了解使用者建立的「虛擬」相簿和實體照片（CameraGrabHist or uplload_history）的關係。 */
+create table if not exists public.sys_resource_explorer (
+    resource varchar(100) references public.sys_resource(id),
+    target_type smallint default 1 CHECK (target_type > 0),
+    target varchar(100) not null,
+    status smallint default 1 CHECK(status > -1 and status < 2),
+    created_at timestamp default now(),
+    updated_at timestamp default now(),
+    primary key(resource, target_type, target)
+);
+comment on table public.sys_resource_explorer is '記錄資源擁有哪些實體檔案（照片）或者子資源。';
+comment on column public.sys_resource_explorer.resource is '資源編號';
+comment on column public.sys_resource_explorer.target_type is '目標類型。1=實體檔案，2=子資源';
+comment on column public.sys_resource_explorer.target is '目標編號。可能是實體檔案名稱（含副檔名）或子資源的編號。';
+comment on column public.sys_resource_explorer.status is '關係狀態。0=禁用,1=啟用';
+comment on column public.sys_resource_explorer.created_at is '創建時間';
+comment on column public.sys_resource_explorer.updated_at is '最後更新時間，可以當作刪除的標準。';
+
+
+/* sys_permission 定義能對資源進行操作的權限
+   每一個權限 = 對某一項資源允許一個指定操作
+   或者把權限當作「標籤」使用，例如不要訂閱某些東西
+   部門或者個人照片已經記錄在 CameraGrabHist，這種就不用額外記錄了。 */
+create table if not exists public.sys_permission (
 	name varchar(30) primary key not null,
 	description varchar(100) not null,
-	resource varchar(100) not null,
-	resource_type smallint not null,
-	status smallint default 1,
-	config jsonb
+	resource varchar(100) references public.sys_resource(id),
+	operation varchar(20) references public.sys_operation(operation),
+	status smallint default 1 CHECK(status > -1 and status < 2),
+    created_at timestamp default now(),
+    updated_at timestamp default now()
 );
 comment on table public.sys_permission is '設置允許對指定資源進行操作的權限';
-comment on column public.sys_permission.name is '權限名稱(主鍵)。命名方式為 資源名稱-{C,R,U,D}，分別代表新增、讀取、編輯、刪除。';
+comment on column public.sys_permission.name is '權限名稱(主鍵)。命名方式為 資源類型-資源名稱-操作前幾個字母大寫。';
 comment on column public.sys_permission.description is '權限說明';
-comment on column public.sys_permission.resource is '資源名稱(具唯一性)';
+comment on column public.sys_permission.resource is '資源名稱(具唯一性)，外鍵允許填入NULL';
+comment on column public.sys_permission.operation is '操作名稱(具唯一性)，外鍵允許填入NULL';
 comment on column public.sys_permission.status is '權限狀態。0=禁用,1=啟用';
-comment on column public.sys_permission.resource_type is '資源類型。1=網頁,2=按鈕,3=檔案,4=資料夾,5=訂閱';
-comment on column public.sys_permission.config is '記錄資源所對應的路由。後台搜尋權限後，動態合成該用戶允許的路由表，然後發送給前台。不過目前沒有使用。';
+comment on column public.sys_permission.created_at is '創建時間';
+comment on column public.sys_permission.updated_at is '最後更新時間，可以當作刪除的標準。';
 
-/* sys_permission_operation 定義權限能對資源進行哪些操作 */
--- 資料表
-drop table if exists public.sys_permission_operation;
-create table public.sys_permission_operation (
-	permission varchar(30) not null,
-	operation varchar(20) not null,
-	primary key(permission, operation)
-);
-comment on table public.sys_permission_operation is '權限擁有哪些操作';
-comment on column public.sys_permission_operation.permission is '權限名稱';
-comment on column public.sys_permission_operation.operation is '操作標籤';
 
 /* sys_role 定義有哪些角色 */
--- 角色資料表
-drop table if exists public.sys_role;
-create table public.sys_role (
+create table if not exists public.sys_role (
 	role varchar(30) primary key not null,
 	name varchar(30) not null,
 	description varchar(100) not null,
-	status smallint default 1
+	status smallint default 1 CHECK(status > -1 and status < 2),
+    created_at timestamp default now(),
+    updated_at timestamp default now()
 );
 comment on table public.sys_role is '設置具有特定權限的角色';
-comment on column public.sys_role.role is '角色標籤(主鍵)。使用英文撰寫，方便第三方程式判斷。';
+comment on column public.sys_role.role is '角色標籤(主鍵)。角色定位-角色名稱，使用英文撰寫，方便第三方程式判斷。';
 comment on column public.sys_role.name is '角色名稱';
 comment on column public.sys_role.description is '角色定位';
 comment on column public.sys_role.status is '角色狀態。0=禁用,1=啟用';
+comment on column public.sys_role.created_at is '創建時間';
+comment on column public.sys_role.updated_at is '最後更新時間，可以當作刪除的標準。';
+
 
 /* sys_role_permission 定義角色具有哪些權限 */
--- 資料表
-drop table if exists public.sys_role_permission;
-create table public.sys_role_permission (
-	role varchar(30) not null,
-	permission varchar(30) not null,
+create table if not exists public.sys_role_permission (
+	role varchar(30) references public.sys_role(role),
+	permission varchar(30) references public.sys_permission(name),
+    status smallint default 1 CHECK(status > -1 and status < 2),
+    created_at timestamp default now(),
+    updated_at timestamp default now(),
 	primary key(role, permission)
 );
 comment on table public.sys_role_permission is '角色擁有哪些權限';
 comment on column public.sys_role_permission.role is '角色標籤';
 comment on column public.sys_role_permission.permission is '權限名稱';
-
-/*
- * sys_role_group 定義角色群組，並制定規則，方便系統新增角色時判斷
- * 目前用 active_count 定義用戶只能擁有此群組一定數量的角色，
- * 當 active_count = 1 時，所有角色互斥。
- */
-drop table if exists public.sys_role_group;
-create table public.sys_role_group (
-	id serial primary key,
-	name varchar(30) not null,
-	description varchar(100) not null,
-	active_count integer default 1
-);
-comment on table public.sys_role_group is '由於方便定義互斥角色、特定角色數量';
-comment on column public.sys_role_group.name is '群組名稱';
-comment on column public.sys_role_group.description is '說明群組的功能和定位';
-comment on column public.sys_role_group.active_count is '群組賦予某一用戶的最大角色數量。預設為1，意思是互斥';
-
-/* sys_role_in_group 定義角色屬於哪些群組 */
-drop table if exists public.sys_role_in_group;
-create table public.sys_role_in_group (
-	role varchar(30) not null,
-	group_id integer not null,
-	primary key(role, group_id)
-);
-comment on table public.sys_role_in_group is '角色屬於哪些群組';
-comment on column public.sys_role_in_group.role is '角色標籤';
-comment on column public.sys_role_in_group.group_id is '角色群組id';
-
-/* sys_role_relation 定義角色彼此的繼承關係，這裡採用受限繼承，因為單向結構比較簡單實現。 */
-drop table if exists public.sys_role_relation;
-create table public.sys_role_relation (
-	role varchar(30) not null,
-	lower_role varchar(30) not null,
-	is_necessary boolean default false,
-	primary key(role, lower_role)
-);
-comment on table public.sys_role_relation is '角色彼此的繼承關係';
-comment on column public.sys_role_relation.role is '上級角色';
-comment on column public.sys_role_relation.lower_role is '下級角色';
-comment on column public.sys_role_relation.is_necessary is '方便系統判斷，當用戶想要擁有上級角色，是否需要下級角色';
+comment on column public.sys_role_permission.status is '角色狀態。0=禁用,1=啟用';
+comment on column public.sys_role_permission.created_at is '創建時間';
+comment on column public.sys_role_permission.updated_at is '最後更新時間，可以當作刪除的標準。';
 
 /* sys_user 定義有哪些用戶 */
 -- 資料表
-drop table if exists public.sys_user;
-create table public.sys_user (
-    empid varchar(8) primary key not null,
+create table if not exists public.sys_user (
+    id varchar(20) primary key not null,
     password varchar(100),
     salt varchar(100),
     name varchar(30) not null,
     dept1 varchar(20) not null,
     dept2 varchar(20) not null,
-    dept3 varchar(20),
+    dept3 varchar(20) default '',
     phone varchar(20),
     email varchar(50) not null,
     avatar varchar(100),
-    status smallint default 1,
+    status smallint default 1 CHECK(status > -1 and status < 2),
     created_at timestamp default now(),
     updated_at timestamp default now()
 );
 comment on table public.sys_user is '設置用戶';
-comment on column public.sys_user.empid is '員工編號。這是用戶的唯一標識。';
+comment on column public.sys_user.id is '員工編號。這是用戶的唯一標識。';
 comment on column public.sys_user.password is '密碼。使用md5加密。由於UMC有認證API，因此目前沒有使用。';
 comment on column public.sys_user.salt is '密碼鹽。使用md5加密。由於UMC有認證API，因此目前沒有使用。';
 comment on column public.sys_user.name is '用戶名稱。會去UMC的API獲取該工號對應的名字。';
@@ -152,151 +183,223 @@ comment on column public.sys_user.status is '用戶狀態。0=禁用,1=啟用';
 comment on column public.sys_user.created_at is '創建時間';
 comment on column public.sys_user.updated_at is '更新時間';
 
+
+/* sys_user_role 定義用戶擁有哪些角色
+   解決每次都要先建立 usergroup 再建立 role 的問題 */
+create table if not exists public.sys_user_role (
+	user_id varchar(20) references public.sys_user(id),
+	role varchar(30) references public.sys_role(role),
+    status smallint default 1 CHECK(status > -1 and status < 2),
+    created_at timestamp default now(),
+    updated_at timestamp default now(),
+	primary key(user_id, role)
+);
+comment on table public.sys_user_role is '用戶擁有哪些角色';
+comment on column public.sys_user_role.role is '角色標籤';
+comment on column public.sys_user_role.user_id is '員工編號';
+comment on column public.sys_user_role.status is '關係狀態。0=禁用,1=啟用';
+comment on column public.sys_user_role.created_at is '創建時間';
+comment on column public.sys_user_role.updated_at is '最後更新時間，可以當作刪除的標準。';
+
+
+/* sys_user_permission 定義用戶具有哪些權限
+   這個具有最高權限，主要是解決用戶的私人資料夾、相簿或檔案。 */
+create table if not exists public.sys_user_permission (
+	user_id varchar(20) references public.sys_user(id),
+	permission varchar(30) references public.sys_permission(name),
+    status smallint default 1 CHECK(status > -1 and status < 2),
+    created_at timestamp default now(),
+    updated_at timestamp default now(),
+	primary key(user_id, permission)
+);
+comment on table public.sys_user_permission is '用戶擁有哪些權限';
+comment on column public.sys_user_permission.user_id is '員工編號';
+comment on column public.sys_user_permission.permission is '權限名稱';
+comment on column public.sys_user_permission.status is '關係狀態。0=禁用,1=啟用';
+comment on column public.sys_user_permission.created_at is '創建時間';
+comment on column public.sys_user_permission.updated_at is '最後更新時間，可以當作刪除的標準。';
+
+
 /*
  * sys_usergroup 定義用戶組。這個非常重要，因為員工一定都會有部門，這樣會比較方便。
  * 用戶組可以視為一個特殊的用戶。
  * 因為有建 parent，所以可以用 CTE 遞迴(With Recursive)的方式取得用戶組的所有上級用戶組。
  */
-drop table if exists public.sys_usergroup;
-create table public.sys_usergroup (
+create table if not exists public.sys_usergroup (
 	name varchar(30) primary key not null,
 	description varchar(100),
-	parent varchar(30)
+	parent varchar(30),
+    created_at timestamp default now(),
+    updated_at timestamp default now()
 );
 comment on table public.sys_usergroup is '設置用戶組，方便設置權限';
 comment on column public.sys_usergroup.name is '用戶組名稱，方便辨識';
 comment on column public.sys_usergroup.description is '用戶組說明';
 comment on column public.sys_usergroup.parent is '父級用戶組，不填表示沒有';
+comment on column public.sys_usergroup.created_at is '創建時間';
+comment on column public.sys_usergroup.updated_at is '最後更新時間，可以當作刪除的標準。';
+
 
 /*
- * sys_user_in_group 定義用戶屬於哪些用戶組
+ * sys_user_usergroup 定義用戶屬於哪些用戶組
  * 這裡採用的是記錄直接關聯用戶，因此搜尋的時候需要用遞迴的方式取得所有上級用戶組，會比較慢。
  */
-drop table if exists public.sys_user_usergroup;
-create table public.sys_user_usergroup (
-    empid varchar(8) not null,
-    usergroup varchar(30) not null,
-    primary key(empid, usergroup)
+create table if not exists public.sys_user_usergroup (
+    user_id varchar(20) references public.sys_user(id),
+    usergroup varchar(30) references public.sys_usergroup(name),
+    status smallint default 1 CHECK(status > -1 and status < 2),
+    created_at timestamp default now(),
+    updated_at timestamp default now(),
+    primary key(user_id, usergroup)
 );
 comment on table public.sys_user_usergroup is '用戶屬於哪些用戶組';
-comment on column public.sys_user_usergroup.empid is '員工編號';
+comment on column public.sys_user_usergroup.user_id is '員工編號';
 comment on column public.sys_user_usergroup.usergroup is '用戶組名稱';
+comment on column public.sys_user_usergroup.status is '關係狀態。0=禁用,1=啟用';
+comment on column public.sys_user_usergroup.created_at is '創建時間';
+comment on column public.sys_user_usergroup.updated_at is '最後更新時間，可以當作刪除的標準。';
+
 
 /*
  * sys_usergroup_role 定義用戶組具有哪些角色，並透過 status 控制用戶組是否能使用該角色。
  * 針對用戶組新增角色可以大幅度降低資料量，因為用戶組的數量遠遠小於用戶的數量。
- * 如果用戶組是工號，表示那位員工有獨立擁有的角色。
  */
 -- 資料表
-drop table if exists public.sys_usergroup_role;
-create table public.sys_usergroup_role (
-    usergroup varchar(30) not null,
-    role varchar(30) not null,
-    status smallint default 1,
+create table if not exists public.sys_usergroup_role (
+    usergroup varchar(30) references public.sys_usergroup(name),
+    role varchar(30) references public.sys_role(role),
+    status smallint default 1 CHECK(status > -1 and status < 2),
+    created_at timestamp default now(),
+    updated_at timestamp default now(),
     primary key(usergroup, role)
 );
 comment on table public.sys_usergroup_role is '用戶組擁有哪些角色';
 comment on column public.sys_usergroup_role.usergroup is '用戶組名稱';
 comment on column public.sys_usergroup_role.role is '角色標籤';
 comment on column public.sys_usergroup_role.status is '關係狀態。0=禁用,1=啟用';
+comment on column public.sys_usergroup_role.created_at is '創建時間';
+comment on column public.sys_usergroup_role.updated_at is '最後更新時間，可以當作刪除的標準。';
 
--- 用戶新增角色時，判斷是否有執行函數的log
-create table if not exists public.sys_usergroup_role_log (
-    usergroup varchar(30) not null,
-    role varchar(30) not null,
-    description varchar(100),
-    change_time timestamp default now(),
-    primary key(usergroup, change_time)
+
+/* sys_usergroup_permission 定義用戶具有哪些權限
+   這個具有第二高權限，主要是解決用戶組內部共享的資料夾、相簿或檔案。 */
+create table if not exists public.sys_usergroup_permission (
+	usergroup varchar(30) references public.sys_usergroup(name),
+	permission varchar(30) references public.sys_permission(name),
+    status smallint default 1 CHECK(status > -1 and status < 2),
+    created_at timestamp default now(),
+    updated_at timestamp default now(),
+	primary key(usergroup, permission)
 );
-comment on table public.sys_usergroup_role_log is '用戶新增角色時，記錄新增失敗的log';
-comment on column public.sys_usergroup_role_log.usergroup is '用戶組名稱';
-comment on column public.sys_usergroup_role_log.role is '新角色';
-comment on column public.sys_usergroup_role_log.description is '問題說明';
+comment on table public.sys_usergroup_permission is '用戶組擁有哪些權限';
+comment on column public.sys_usergroup_permission.usergroup is '用戶組';
+comment on column public.sys_usergroup_permission.permission is '權限名稱';
+comment on column public.sys_usergroup_permission.status is '關係狀態。0=禁用,1=啟用';
+comment on column public.sys_usergroup_permission.created_at is '創建時間';
+comment on column public.sys_usergroup_permission.updated_at is '最後更新時間，可以當作刪除的標準。';
 
--- 用戶組新增角色前會執行的函數，檢查新角色是否會和舊角色們衝突，如果衝突就拋出錯誤。
--- 要先在外部檢查 new.usergroup 和 new.role 是否存在，因為函數不會檢查。
--- 這麼設計的原因是觸發器會讓資料庫承受太多搜尋壓力。
--- new.{usergroup, role, status} 新角色
-create or replace function public.sys_assign_role_to_usergroup() returns trigger as $$
-declare
-	parent_count integer;
-	match_count integer;
-    can_add boolean;
-begin
-    -- tmp_roles 一定會被刪除，因此不用擔心衝突
-    -- 列出舊角色們，並暫存起來
-    create temp table tmp_roles as
-    with recursive cte_usergroup as (
-        -- 起始條件
-        select
-            name, parent
-        from public.sys_usergroup
-        where name = new.usergroup
-        union
-        -- 遞迴條件
-        -- cte_usergroup 是一個暫存表，用來存放遞迴的結果
-        -- a 是上級用戶組，b 是下級用戶組，所以 a.name = b.parent
-        select
-            a.name, a.parent
-        from public.sys_usergroup a, cte_usergroup b
-        where a.name = b.parent
-    )
-    select role
-    from public.sys_usergroup_role
-    where (usergroup in (select name from cte_usergroup) or usergroup=new.usergroup) and status = 1;
 
-    -- 如果新角色需要前置角色，檢查舊角色們有沒有符合
-    -- a 是找出所有前置角色，b 是比對舊角色
-    select count(a.lower_role), count(b.role) into parent_count, match_count
-    from (
-        select role, lower_role from public.sys_role_relation where role = new.role and is_necessary = true
-    ) a
-    left join tmp_roles b on a.lower_role = b.role;
 
-    if parent_count > 0 and match_count < parent_count then
-        insert into public.sys_usergroup_role_log(usergroup, role, description) values (new.usergroup, new.role, '新角色的前置角色條件不滿足。');
-        raise notice '新角色的前置角色條件不滿足。';
-        drop table tmp_roles;
-        return null;
-    end if;
+--##########################################
+-- 資料新增
+--##########################################
+--#########
+-- 預設資料
+-- 使用 transaction 來確保資料一致性
+--#########
+insert into public.sys_permission(name, description, operation) values
+('tag-admin-G', '能否賦予管理員權限給他人的標籤', 'grant')
+ON CONFLICT (name) DO NOTHING;
 
-    -- 如果新角色屬於某個特殊角色組，其用戶組的角色數量有沒有超過上限
-    select
-        a.id,
-        case when a.active_count > coalesce(b.role_count, 0)
-        then true
-        else false
-        end into can_add
-    from (
-        -- 找出新角色對應的特殊角色組的角色數量上限
-        select
-            id, active_count
-        from public.sys_role_group
-        where id in (
-            select group_id
-            from public.sys_role_in_group
-            where role = new.role
-        )
-    ) a
-    left join (
-        -- 計算各特殊角色組目前已經有多少角色
-        select group_id, count(role) as role_count
-        from public.sys_role_in_group
-        where role in (select role from tmp_roles)
-        group by group_id
-    ) b on b.group_id = a.id;
-    if found and not can_add then
-        insert into public.sys_usergroup_role_log(usergroup, role, description) values (new.usergroup, new.role, '新角色不滿足特殊角色組的規則，因此用戶組無法添加。');
-        raise notice '新角色不滿足特殊角色組的規則，因此用戶組無法添加。';
-        drop table tmp_roles;
-        return null;
-    end if;
+insert into public.sys_role(role, name, description) values
+('root', '超級管理員', '擁有所有管理權限，且能夠賦予別人管理員職位'),
+('admin', '管理員', '擁有所有管理權限，但無法賦予別人管理員職位'),
+('employee', '普通用戶', '只能觀看自己拍攝的照片或者所屬部門的照片以及基礎功能。')
+ON CONFLICT (role) DO NOTHING;
 
-    drop table tmp_roles;
-    return new;
-end;
-$$ language plpgsql;
+insert into public.sys_role_permission(role, permission) values
+('root', 'tag-admin-G')
+on conflict (role, permission) do nothing;
 
--- 綁定函數，觸發時機在用戶新增角色之前。
-drop trigger if exists sys_assign_role_to_usergroup on public.sys_usergroup_role;
-create trigger sys_assign_role_to_usergroup before insert on public.sys_usergroup_role for each row execute procedure public.sys_assign_role_to_usergroup();
+insert into public.sys_user(id, name, dept1, dept2, dept3, email) values
+('00000000', '最高權限擁有人', 'super', 'test', 'abc', 'maxwell5566@yahoo.com.tw')
+ON CONFLICT (id) DO NOTHING;
+
+insert into public.sys_user_role(user_id, role) values
+('00000000', 'root')
+ON CONFLICT (user_id, role) DO NOTHING;
+
+
+--#########
+-- 測試資料
+-- 可以測試 user->perm,usergroup->perm,role->perm
+--#########
+insert into public.sys_permission(name, description, operation) values
+('test-super/test/abc-R', '測試權限1', 'read'),
+('test-super/test-R', '測試權限2', 'read'),
+('test-super-R', '測試權限3', 'read'),
+('test-super1-R', '測試權限4', 'read'),
+('test-super2-R', '測試權限5', 'read'),
+('test-super3-R', '測試權限6', 'read')
+ON CONFLICT (name) DO NOTHING;
+
+insert into public.sys_role(role, name, description) values
+('test-employee1', '測試角色1', '測試用角色1'),
+('test-employee2', '測試角色2', '測試用角色2'),
+('test-employee3', '測試角色3', '測試用角色3')
+ON CONFLICT (role) DO NOTHING;
+
+insert into public.sys_role_permission(role, permission) values
+('test-employee1', 'test-super1-R'),
+('test-employee2', 'test-super2-R'),
+('test-employee3', 'test-super3-R')
+ON CONFLICT (role, permission) DO NOTHING;
+
+insert into public.sys_usergroup (name, description, parent) values
+('super/test/abc', '測試用用戶組0', 'super/test'),
+('super/test', '測試用用戶組1', 'super'),
+('super', '測試用用戶組2', NULL)
+ON CONFLICT (name) DO NOTHING;
+
+insert into public.sys_usergroup_permission(usergroup, permission) values
+('super/test/abc', 'test-super/test/abc-R'),
+('super/test', 'test-super/test-R'),
+('super', 'test-super-R')
+ON CONFLICT (usergroup, permission) DO NOTHING;
+
+insert into public.sys_usergroup_role (usergroup, role) values
+('super/test/abc', 'test-employee3'),
+('super/test', 'test-employee2'),
+('super', 'test-employee1')
+ON CONFLICT (usergroup, role) DO NOTHING;
+
+insert into public.sys_user(id, name, dept1, dept2, dept3, email) values
+('admin0', '測試用管理員', 'super', 'test', '', 'maxwell5566@yahoo.com.tw'),
+('test0', '一級部門測試員', 'super', '', '', 'maxwell5566@yahoo.com.tw'),
+('test1', '二級部門測試員', 'super', 'test', '', 'maxwell5566@yahoo.com.tw'),
+('test2', '三級部門測試員', 'super', 'test', 'abc', 'maxwell5566@yahoo.com.tw')
+ON CONFLICT (id) DO NOTHING;
+
+insert into public.sys_user_usergroup (user_id, usergroup) values
+('admin0', 'super/test'),
+('test0', 'super'),
+('test1', 'super/test'),
+('test2', 'super/test/abc')
+ON CONFLICT (user_id, usergroup) DO NOTHING;
+
+insert into public.sys_user_role(user_id, role) values
+('admin0', 'admin'),
+('admin0', 'test-employee2'),
+('test0', 'test-employee2'),
+('test1', 'test-employee2'),
+('test2', 'test-employee2'),
+('test0', 'test-employee3'),
+('test1', 'test-employee3'),
+('test2', 'test-employee3')
+ON CONFLICT (user_id, role) DO NOTHING;
+
+insert into public.sys_user_permission(user_id, permission) values
+('test0', 'test-super1-R'),
+('test1', 'test-super2-R'),
+('test2', 'test-super3-R')
+ON CONFLICT (user_id, permission) DO NOTHING;

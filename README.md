@@ -31,6 +31,9 @@ layout.tsx 就是提供一個公用畫面給同目錄的　page.tsx 或者它的
 ```
 這個時候，網頁只要輸入 `http://xxx.xxx.xxx.xxx:~/b` 就可以導入 `(a)/b/page.tsx`，而且這個組件是使用 `(a)/layout.tsx` 當作畫面。同理可得，`http://xxx.xxx.xxx.xxx:~/c` 可以導入 `(a)/c/page.tsx`。
 
+### 如何導入自訂 CSS
+在 .tsx 裡面寫上 `import styles from 'xxx.css'`，然後在想要導入的元素寫上 `className={styles.{your class} }` 就可以了。
+
 [Next.js]: https://nextjs.org/docs/pages/api-reference/create-next-app
 [TailWindCSS]: https://tailwindcss.com/docs/guides/nextjs
 [PostCSS]: https://hackmd.io/@FortesHuang/S1I2iF7v5
@@ -44,3 +47,4 @@ layout.tsx 就是提供一個公用畫面給同目錄的　page.tsx 或者它的
 [Redux]: https://redux.js.org/introduction/getting-started
 [RxJS]: https://react-rxjs.org/docs/getting-started
 [Qwik Layout]: https://qwik.tw/qwikcity/layout/overview/
+[Next.js Tutor]: https://www.youtube.com/watch?v=GowPe3iiqTs

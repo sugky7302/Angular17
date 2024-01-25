@@ -1,16 +1,16 @@
-import Image from 'next/image';
-import Test from './test';
+// import Image from 'next/image';
+import Sidebar from './sidebar';
 
 export default function App() {
     return (
-        <main className="flex min-h-screen flex-col items-center justify-between p-24">
-            <Image
+        <main className="min-h-screen">
+            {/* <Image
                 src="https://i.imgur.com/MK3eW3Am.jpg"
                 width={500}
                 height={500}
                 alt="Katherine Johnson"
-            />
-            <Test />
+            /> */}
+            <Sidebar />
         </main>
     );
 }

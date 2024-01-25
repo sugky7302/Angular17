@@ -6,8 +6,8 @@ import React from 'react';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-    title: 'my-chat',
-    description: 'A Chatbot for Multiple Models',
+    title: '首頁 - 魔法工坊',
+    description: '一個讓玩家著迷的魔法合成遊戲',
 };
 
 // RootLayout 是整個網站的根組件，Next.js 會從這裡開始渲染。

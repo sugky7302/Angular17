@@ -14,7 +14,8 @@ x-params:
   TZ_OFFSET: &tz_offset 28800  # 8*60*60
 
 x-postgres: &pg_dsn
-  POSTGRES_DB: &pg_db main
+  # 用內建的 schema，不用自己建
+  POSTGRES_DB: &pg_db postgres
   # postgres 的使用者不能用 pg_*
   POSTGRES_USER: &pg_user chat_user
   POSTGRES_PASSWORD: &pg_pwd 9}!fbW3P>4+j9ZN&Uv^2x4Pb

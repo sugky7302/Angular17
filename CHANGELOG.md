@@ -1,7 +1,13 @@
 # 更新日誌
 
-## Unreleased - 2024-01-12
+## Unreleased - 2024-01-27
+### Added:
+- 新增 tag 資料表，用標籤橫向連結所有物件。
+- 新增 knowledge 資料表，儲存遊戲內的知識。
+
+### Changed:
 - 調整權限管理資料表結構。
+- 把清除舊表的動作統一在 `0_init.sql` 裡面執行。
 
 ## [0.2.0] - 2023-12-16
 - 導入 TailWindCSS、PostCSS、Flowbite、PlayWright、Prettier、ESLint、Firebase、Redux、RxJS。([#5024def][5024def])([#de023e2][de023e2])([#ddf4238][ddf4238])

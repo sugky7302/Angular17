@@ -1,9 +1,13 @@
 # 更新日誌
 
-## Unreleased - 2024-01-27
+## Unreleased - 2024-01-28
 ### Added:
 - 新增 tag 資料表，用標籤橫向連結所有物件。
 - 新增 knowledge 資料表，儲存遊戲內的知識。
+- 新增 spell 資料表，儲存遊戲法術。
+- 新增 knowledge_tag 資料表，記錄知識有哪些標籤。
+- 新增 spell_tag 資料表，記錄法術有哪些標籤。
+- 新增 spell_knowledge 資料表，定義法術由那些知識組成的。
 
 ### Changed:
 - 調整權限管理資料表結構。

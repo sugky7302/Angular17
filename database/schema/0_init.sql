@@ -25,5 +25,7 @@ drop table if exists public.sys_usergroup;
 drop trigger if exists sys_assign_role_to_usergroup on public.sys_usergroup_role;
 
 drop table if exists public.knowledge_tag;
+drop table if exists public.spell_tag;
 drop table if exists public.tag;
 drop table if exists public.knowledge;
+drop table if exists public.spell;

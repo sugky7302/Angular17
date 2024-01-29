@@ -14,3 +14,8 @@ comment on column public.tag.parent is '父標籤名稱。如果為空，則表�
 --##############
 -- 新增資料
 --##############
+insert into public.tag(name, parent) values
+    ('火焰', null),
+    ('投射物', null),
+    ('球體', null)
+on conflict (name) do nothing;

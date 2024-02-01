@@ -8,12 +8,13 @@
 - 新增 knowledge_tag 資料表，記錄知識有哪些標籤。([#4904710][4904710])
 - 新增 spell_knowledge 資料表，定義法術由那些知識組成的。([#4904710][4904710])
 - 新增行為樹。
-    - 定義基本節點。
+    - 定義基本節點。([#f093bce][f093bce])
 
 ### Changed:
 - 調整權限管理資料表結構。([#6b1af67][6b1af67])
 - 把清除舊表的動作統一在 `0_init.sql` 裡面執行。([#def94d8][def94d8])
 
+[f093bce]: https://github.com/sugky7302/my-chat/commit/f093bce4a9f77599d347b7f971c4f608232e542e
 [4904710]: https://github.com/sugky7302/my-chat/commit/490471034befc51ef7500c17f4eac57f43f4b34d
 [def94d8]: https://github.com/sugky7302/my-chat/commit/def94d8bb11bd03b228445e8a4f83ea92865250c
 [6b1af67]: https://github.com/sugky7302/my-chat/commit/6b1af674965185be0434ad058243261d9ce04b0f

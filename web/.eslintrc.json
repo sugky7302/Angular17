@@ -14,7 +14,8 @@
         "camelcase": "error",
         "spaced-comment": "error",
         "jsx-quotes": "off",
-        "no-duplicate-imports": "error"
+        "no-duplicate-imports": "error",
+        "@typescript-eslint/no-explicit-any": "off"
     },
     "parser": "@typescript-eslint/parser",
     "plugins": [
